@@ -30,7 +30,7 @@ def handle_client(server, data, addr):
         #Sends back all active games
         elif message.startswith("query games"):
             if games:
-                response = "\n".join([f"{id}: {info}" for id, info in games.items()])
+                response = "\n\n".join([f"{id}: {info}" for id, info in games.items()])
             else:
                 server.sendto(b'No active games in progress', addr)
 
@@ -42,7 +42,7 @@ def handle_client(server, data, addr):
                 server.sendto(b"SUCCESS: Player de-registered\n", addr)
             else:
                 server.sendto("FAILURE: Player not found\n", addr)
-                
+
         else:
             server.sendto(b'Invalid command, please try again', addr)
 
