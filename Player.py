@@ -21,6 +21,7 @@ def main():
         if req.startswith('register'):
             _, _, ip, t_port, _ = req.split()
             client.bind((ip, int(t_port)))
+            print(ip, int(t_port))
 
             sendAndRecieve(client, req)
             req = input('Send to server\n\n')
@@ -40,4 +41,4 @@ def main():
 
 main()
 
-        
+    
