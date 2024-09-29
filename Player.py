@@ -15,7 +15,7 @@ def sendAndRecieve(sock, message):
 def main():
     req = input('Send to tracker:\n\n') #Prompt
 
-    while req != 'quit':
+    while True:
         client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         if req.startswith('register'):
@@ -28,13 +28,16 @@ def main():
         elif req.startswith('query players') or req.startswith('query games') or req.startswith('de-register'):
             sendAndRecieve(client, req)
             req = input('Send to server\n\n')
+            client.close()
+
+        elif req == 'quit':
+            client.close()
+            break
 
         else:
             req = input('Send to server\n\n')
 
 
 main()
-
-        
 
         

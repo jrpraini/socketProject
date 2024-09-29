@@ -1,7 +1,8 @@
 import socket
 import threading
+from collections import defaultdict
 
-players = {} 
+players = defaultdict()
 games = {}
 
 def handle_client(server, data, addr):
