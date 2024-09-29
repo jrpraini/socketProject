@@ -19,7 +19,8 @@ def handle_client(server, data, addr):
             else:
                 matching_players = {key: value for key, value in players.items() if key[0] == ip}
                 if(matching_players):
-                    matching_ports = any(key[1] == t_port for key in players.keys())
+                    matching_ports = any(key[1] == t_port for key in matching_players.keys())
+                    
                     if(matching_ports):
                         server.sendto(b"FAILURE: Socket in use\n", addr)
                     else:
