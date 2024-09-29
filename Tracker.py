@@ -1,9 +1,9 @@
 import socket
 import threading
-from collections import defaultdict
 
-players = defaultdict()
+players = {}
 games = {}
+
 
 def handle_client(server, data, addr):
     try:
@@ -17,8 +17,14 @@ def handle_client(server, data, addr):
             if player_name in players:
                 server.sendto(b"FAILURE: Duplicate player name\n", addr)
             else:
-                players[player_name] = (ip, t_port, p_port, "free")
-                server.sendto(b"SUCCESS: Player registered\n", addr)
+                matching_players = {key: value for key, value in players.items() if key[0] == ip}
+                if(matching_players):
+                    matching_ports = any(key[1] == t_port for key in players.keys())
+                    if(matching_ports):
+                        server.sendto(b"FAILURE: Socket in use\n", addr)
+                    else:
+                        players[player_name] = (ip, t_port, p_port, "free")
+                        server.sendto(b"SUCCESS: Player registered\n", addr)
 
         #Sends back all players currently in the player database
         elif message == "query players":
