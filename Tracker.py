@@ -4,7 +4,6 @@ import threading
 players = {}
 games = {}
 
-
 def handle_client(server, data, addr):
     try:
         message = data.decode('utf-8')
@@ -26,6 +25,9 @@ def handle_client(server, data, addr):
                     else:
                         players[player_name] = (ip, t_port, p_port, "free")
                         server.sendto(b"SUCCESS: Player registered\n", addr)
+                else:
+                    players[player_name] = (ip, t_port, p_port, "free")
+                    server.sendto(b"SUCCESS: Player registered\n", addr)
 
         #Sends back all players currently in the player database
         elif message == "query players":
