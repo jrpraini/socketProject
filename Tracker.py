@@ -10,6 +10,7 @@ def handle_client(server, data, addr):
 
         print(f"Received: {message}")
 
+        #Adds player to players dict and sends success back if register successful
         if message.startswith("register"):
             _, player_name, ip, t_port, p_port = message.split()
             if player_name in players:
@@ -18,6 +19,7 @@ def handle_client(server, data, addr):
                 players[player_name] = (ip, t_port, p_port, "free")
                 server.sendto(b"SUCCESS: Player registered\n", addr)
 
+        #Sends back all players currently in the player database
         elif message == "query players":
             if players:
                 response = "\n".join([f"{name}: {info}" for name, info in players.items()])
@@ -25,12 +27,14 @@ def handle_client(server, data, addr):
                 response = "No players registered"
             server.sendto(response.encode('utf-8'), addr)
 
+        #Sends back all active games
         elif message.startswith("query games"):
             if games:
                 response = "\n".join([f"{id}: {info}" for id, info in games.items()])
             else:
                 server.sendto(b'No active games in progress', addr)
 
+        #Removes the user, if exists, from the database
         elif message.startswith("de-register"):
             _, player_name = message.split()
             if player_name in players:
@@ -38,6 +42,7 @@ def handle_client(server, data, addr):
                 server.sendto(b"SUCCESS: Player de-registered\n", addr)
             else:
                 server.sendto("FAILURE: Player not found\n", addr)
+                
         else:
             server.sendto(b'Invalid command, please try again', addr)
 

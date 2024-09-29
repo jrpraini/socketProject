@@ -1,7 +1,10 @@
 import socket
+
+#Global for all to access
 server_ip = '10.120.70.112'
 server_port = 50500
 
+#Sends requests to tracker, prints response and returns data and addr for manipulation if needed
 def sendAndRecieve(sock, message):
     sock.sendto(message.encode('utf-8'), (server_ip, server_port))
     data,addr = sock.recvfrom(1024)
@@ -10,7 +13,7 @@ def sendAndRecieve(sock, message):
     return data, addr
 
 def main():
-    req = input('Send to server\n')
+    req = input('Send to tracker:\n\n') #Prompt
 
     while req != 'quit':
         client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -20,14 +23,14 @@ def main():
             client.bind((ip, int(t_port)))
 
             sendAndRecieve(client, req)
-            req = input('Send to server\n')
+            req = input('Send to server\n\n')
         
         elif req.startswith('query players') or req.startswith('query games') or req.startswith('de-register'):
             sendAndRecieve(client, req)
-            req = input('Send to server\n')
+            req = input('Send to server\n\n')
 
         else:
-            req = input('Send to server\n')
+            req = input('Send to server\n\n')
 
 
 main()
