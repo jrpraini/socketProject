@@ -35,7 +35,7 @@ def handle_client(server, data, addr):
         #Sends back all active games
         elif message.startswith("query games"):
             if games:
-                response = "\n\n".join([f"{id}: {info}" for id, info in games.items()])
+                response = "\n".join([f"{id}: {info}" for id, info in games.items()])
             else:
                 server.sendto(b'No active games in progress', addr)
 
@@ -54,6 +54,7 @@ def handle_client(server, data, addr):
     except Exception as e:
         print(f"Error: {e}")
 
+#Binds the tracker socket to ip and port, then whenever data is recieved, a client thread is initalized
 def start_tracker(port):
     server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     server.bind(('10.120.70.112', port))
