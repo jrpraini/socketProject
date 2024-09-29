@@ -1,60 +1,59 @@
 import socket
 import threading
 
-# Global state of the tracker
-players = {}  # Dictionary to store registered players
+players = {} 
+games = {}
 
-# Handle client requests
-def handle_client(conn, addr):
-    print(f"Connection established with {addr}")
-    while True:
-        try:
-            # Receive message from player
-            message = conn.recv(1024).decode('utf-8')
-            if not message:
-                break
-            print(f"Received: {message}")
+def handle_client(server, data, addr):
+    try:
+        message = data.decode('utf-8')
 
-            # Process the player's message
-            if message.startswith("register"):
-                _, player_name, ip, t_port, p_port = message.split()
-                if player_name in players:
-                    conn.send("FAILURE: Duplicate player name\n".encode('utf-8'))
-                else:
-                    players[player_name] = (ip, t_port, p_port, "free")
-                    conn.send("SUCCESS: Player registered\n".encode('utf-8'))
+        print(f"Received: {message}")
 
-            elif message == "query players":
-                if players:
-                    response = "\n".join([f"{name}: {info}" for name, info in players.items()])
-                else:
-                    response = "No players registered"
-                conn.send(response.encode('utf-8'))
+        if message.startswith("register"):
+            _, player_name, ip, t_port, p_port = message.split()
+            if player_name in players:
+                server.sendto(b"FAILURE: Duplicate player name\n", addr)
+            else:
+                players[player_name] = (ip, t_port, p_port, "free")
+                server.sendto(b"SUCCESS: Player registered\n", addr)
 
-            elif message.startswith("de-register"):
-                _, player_name = message.split()
-                if player_name in players:
-                    del players[player_name]
-                    conn.send("SUCCESS: Player de-registered\n".encode('utf-8'))
-                else:
-                    conn.send("FAILURE: Player not found\n".encode('utf-8'))
+        elif message == "query players":
+            if players:
+                response = "\n".join([f"{name}: {info}" for name, info in players.items()])
+            else:
+                response = "No players registered"
+            server.sendto(response.encode('utf-8'), addr)
 
-        except Exception as e:
-            print(f"Error: {e}")
-            break
+        elif message.startswith("query games"):
+            if games:
+                response = "\n".join([f"{id}: {info}" for id, info in games.items()])
+            else:
+                server.sendto(b'No active games in progress', addr)
 
-    conn.close()
+        elif message.startswith("de-register"):
+            _, player_name = message.split()
+            if player_name in players:
+                del players[player_name]
+                server.sendto(b"SUCCESS: Player de-registered\n", addr)
+            else:
+                server.sendto("FAILURE: Player not found\n", addr)
+        else:
+            server.sendto(b'Invalid command, please try again', addr)
+
+    except Exception as e:
+        print(f"Error: {e}")
 
 def start_tracker(port):
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(('0.0.0.0', port))
-    server.listen(5)
+    server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server.bind(('10.120.70.112', port))
     print(f"Tracker started on port {port}")
+    
 
     while True:
-        conn, addr = server.accept()
-        client_thread = threading.Thread(target=handle_client, args=(conn, addr))
+        data, addr = server.recvfrom(1024)
+        client_thread = threading.Thread(target=handle_client, args=(server, data, addr))
         client_thread.start()
 
 if __name__ == "__main__":
-    start_tracker(5000)  # Tracker listening on port 5000
+    start_tracker(50500)

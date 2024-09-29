@@ -1,55 +1,37 @@
 import socket
-import tkinter as tk
-from tkinter import scrolledtext
+server_ip = '10.120.70.112'
+server_port = 50500
 
-# Function to send commands to the tracker
-def send_command():
-    command = command_entry.get()  # Get the input command
-    if command:
-        tracker_ip = '127.0.0.1'  # Assuming tracker is local
-        tracker_port = 5000  # Tracker listening port
+def sendAndRecieve(sock, message):
+    sock.sendto(message.encode('utf-8'), (server_ip, server_port))
+    data,addr = sock.recvfrom(1024)
+    print(data.decode('utf-8'))
 
-        try:
-            # Open socket connection to the tracker
-            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client.connect((tracker_ip, tracker_port))
-            client.send(command.encode('utf-8'))
+    return data, addr
 
-            # Receive response from the tracker
-            response = client.recv(1024).decode('utf-8')
-            display_response(f"Response: {response}")
-            client.close()
+def main():
+    req = input('Send to server\n')
 
-        except Exception as e:
-            display_response(f"Error: {str(e)}")
-    else:
-        display_response("No command entered.")
+    while req != 'quit':
+        client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-# Function to display the response in the UI
-def display_response(message):
-    response_text.config(state=tk.NORMAL)
-    response_text.insert(tk.END, message + "\n")
-    response_text.config(state=tk.DISABLED)
+        if req.startswith('register'):
+            _, _, ip, t_port, _ = req.split()
+            client.bind((ip, int(t_port)))
 
-# Tkinter UI setup
-window = tk.Tk()
-window.title("Six card golf")
+            sendAndRecieve(client, req)
+            req = input('Send to server\n')
+        
+        elif req.startswith('query players') or req.startswith('query games') or req.startswith('de-register'):
+            sendAndRecieve(client, req)
+            req = input('Send to server\n')
 
-# Label for Command Input
-command_label = tk.Label(window, text="Enter Command:")
-command_label.pack()
+        else:
+            req = input('Send to server\n')
 
-# Entry widget to input the command
-command_entry = tk.Entry(window, width=50)
-command_entry.pack()
 
-# Button to send the command
-send_button = tk.Button(window, text="Enter", command=send_command)
-send_button.pack()
+main()
 
-# Scrolled Text widget to display the tracker responses
-response_text = scrolledtext.ScrolledText(window, width=60, height=30, state=tk.DISABLED)
-response_text.pack()
+        
 
-# Start the UI loop
-window.mainloop()
+        
