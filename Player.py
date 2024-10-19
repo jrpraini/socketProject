@@ -49,10 +49,9 @@ def main():
             data, _ = sendAndRecieve(client, req)
 
             if data.decode('utf-8').startswith('SUCCESS'):
-                #Res format = f'SUCCESS: ${players_in_game}'
                 _, players_in_game = data.decode('utf-8').split(':')
                 players_in_game = players_in_game.strip().split(',')
-                game = SixCardGolf.SixCardGolf(num_players, num_holes, players_in_game)
+                print(f'Players in game: {players_in_game}')
 
         elif req == 'quit':
             client.close()
