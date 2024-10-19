@@ -1,8 +1,9 @@
 import Deck
 import Player
+import socket
 
 class SixCardGolf:
-    def __init__(self, num_players, num_holes, players):
+    def __init__(self, num_players, num_holes, players, dealer_client):
         self.deck = Deck.Deck()
         self.stock = []
         self.discard = []
@@ -12,6 +13,9 @@ class SixCardGolf:
         self.game_over = False
 
     def deal(self):
-        for player in self.players:
-            for _ in range(6):
-                player.hand.append(self.deck.deal())
+
+
+    def start_game(self):
+        self.deck.shuffle()
+        self.deal()
+        self.play_game()
