@@ -62,7 +62,7 @@ def handle_client(server, data, addr):
             game_id = random.randint(1000, 9999)
             games[game_id] = (player_name, num_players, num_holes)
 
-            response = f"SUCCESS: Game {game_id} started with players\n{players_in_game}"
+            response = players_in_game
 
             
 

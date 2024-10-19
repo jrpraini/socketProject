@@ -1,4 +1,5 @@
 import socket
+import SixCardGolf
 
 #Global for all to access
 server_ip = '10.120.70.112'
@@ -29,6 +30,16 @@ def main():
             sendAndRecieve(client, req)
             req = input('Send to server\n\n')
             client.close()
+
+        elif req.startswith('start game'):
+            _,_,player_name, num_players,num_holes,_ = req.split()
+            data, addr = sendAndRecieve(client, req)
+
+            if data.decode('utf-8').startswith('SUCCESS'):
+                #Res format = f'SUCCESS: ${players_in_game}'
+                _, players_in_game = data.decode('utf-8').split(':')
+
+                print(f'Players in game: {players_in_game}')
 
         elif req == 'quit':
             client.close()
