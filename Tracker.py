@@ -24,7 +24,7 @@ def handle_client(server, data, addr):
                     server.sendto(b"FAILURE: Socket in use\n", addr)
                 else:
                     players[player_name] = (ip, t_port, p_port, "free")
-                    free_player.push(player_name)
+                    free_player.append(player_name)
 
                     server.sendto(b"SUCCESS: Player registered\n", addr)
 

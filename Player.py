@@ -14,7 +14,7 @@ def sendAndRecieve(sock, message):
 
 def listen_for_peer_messages(client_ip, p_port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((client_ip, p_port))
+    sock.bind((client_ip, int(p_port)))
 
     while True:
         data, addr = sock.recvfrom(1024)  # Buffer size of 1024 bytes
@@ -56,7 +56,7 @@ def main():
         elif req == 'quit':
             client.close()
             break
-
+        
         else:
             req = input('Send to server\n\n')
 

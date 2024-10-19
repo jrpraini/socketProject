@@ -12,7 +12,7 @@ class SixCardGolf:
         self.round = 0
         self.game_over = False
 
-    def deal(self):
+    # def deal(self):
 
 
     def start_game(self):
