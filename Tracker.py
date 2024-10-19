@@ -1,9 +1,10 @@
-import socket
+import socket 
 import threading
 import random
 
 players = {}
 games = {}
+free_player = []
 
 def handle_client(server, data, addr):
     try:
@@ -23,10 +24,15 @@ def handle_client(server, data, addr):
                     server.sendto(b"FAILURE: Socket in use\n", addr)
                 else:
                     players[player_name] = (ip, t_port, p_port, "free")
+                    free_player.push(player_name)
+
                     server.sendto(b"SUCCESS: Player registered\n", addr)
 
         elif message.startswith("start game"):
+            players_in_game = []
+
             _, _, player_name, num_players, num_holes = message.split()
+
             if player_name not in players:
                 server.sendto(b"FAILURE: Player not registered\n", addr)
                 return
@@ -43,13 +49,20 @@ def handle_client(server, data, addr):
                 server.sendto(b"FAILURE: Invalid number of holes\n", addr)
                 return
             
-            players[player_name][3] = 'in-play'
+            dealer = players[player_name]
+            dealer[3] = 'in-play'
+
+            players_in_game.append((player_name, dealer[0], dealer[2]))
+
+            for i in range(int(num_players)):
+                player = free_player.pop(random.randint(0, len(free_player) - 1))
+                players[player][3] = 'in-play'
+                players_in_game.append(player, players[player][0], players[player][2])
+            
             game_id = random.randint(1000, 9999)
-
-            #create temp set of players where player is free
-
             games[game_id] = (player_name, num_players, num_holes)
-            server.sendto(f"SUCCESS: Game {game_id} started\n".encode('utf-8'), addr)
+
+            response = f"SUCCESS: Game {game_id} started with players\n{players_in_game}"
 
             
 
@@ -60,6 +73,7 @@ def handle_client(server, data, addr):
                 response = "\n".join([f"{name}: {info}" for name, info in players.items()])
             else:
                 response = "No players registered"
+
             server.sendto(response.encode('utf-8'), addr)
 
         #Sends back all active games
@@ -74,6 +88,10 @@ def handle_client(server, data, addr):
             _, player_name = message.split()
             if player_name in players:
                 del players[player_name]
+
+                if player_name in free_player:
+                    free_player.remove(player_name)
+
                 server.sendto(b"SUCCESS: Player de-registered\n", addr)
             else:
                 server.sendto("FAILURE: Player not found\n", addr)
