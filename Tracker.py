@@ -1,5 +1,6 @@
 import socket
 import threading
+import random
 
 players = {}
 games = {}
@@ -23,6 +24,35 @@ def handle_client(server, data, addr):
                 else:
                     players[player_name] = (ip, t_port, p_port, "free")
                     server.sendto(b"SUCCESS: Player registered\n", addr)
+
+        elif message.startswith("start game"):
+            _, _, player_name, num_players, num_holes = message.split()
+            if player_name not in players:
+                server.sendto(b"FAILURE: Player not registered\n", addr)
+                return
+            
+            if int(num_players) < 2 or int(num_players) > 4:
+                server.sendto(b"FAILURE: Invalid number of players\n", addr) 
+                return
+            
+            if len(players) < int(num_players):
+                server.sendto(b"FAILURE: Not enough players registered\n", addr)
+                return
+            
+            if int(num_holes) < 1 or int(num_holes) > 9:
+                server.sendto(b"FAILURE: Invalid number of holes\n", addr)
+                return
+            
+            players[player_name][3] = 'in-play'
+            game_id = random.randint(1000, 9999)
+
+            #create temp set of players where player is free
+
+            games[game_id] = (player_name, num_players, num_holes)
+            server.sendto(f"SUCCESS: Game {game_id} started\n".encode('utf-8'), addr)
+
+            
+
 
         #Sends back all players currently in the player database
         elif message == "query players":
