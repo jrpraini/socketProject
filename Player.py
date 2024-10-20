@@ -3,7 +3,7 @@ import threading
 import SixCardGolf
 
 #Global for all to access
-server_ip = '10.120.70.112'
+server_ip = '192.168.0.155'
 server_port = 50500
 
 #Sends requests to tracker, prints response and returns data and addr for manipulation if needed
@@ -45,11 +45,15 @@ def main():
             client.close()
 
         elif req.startswith('start game'):
-            _,_,player_name, num_players,num_holes,_ = req.split()
+            _,_,player_name, num_players,num_holes = req.split(maxsplit = 4)
             data, _ = sendAndRecieve(client, req)
 
+            if data.decode('utf-8').startswith('FAILURE'):
+                print(f"Failed to start game: {data.decode('utf-8')}")
+                return
+
             if data.decode('utf-8').startswith('SUCCESS'):
-                _, players_in_game = data.decode('utf-8').split(':')
+                _, players_in_game = data.decode('utf-8').split(':',1)
                 players_in_game = players_in_game.strip().split(',')
                 print(f'Players in game: {players_in_game}')
 
