@@ -27,6 +27,7 @@ def listen_for_peer_messages(client_ip, p_port):
 
         if decoded_message.startswith('INPUT'):
             req = input('')
+            print(req)
             send_message(sock, req, addr[0], addr[1])
 
 def main():

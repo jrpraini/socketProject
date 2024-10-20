@@ -5,7 +5,7 @@ class Player:
         self.name = name
         self.ip = ip
         self.port = port
-        self.hand = PlayerDeck([])
+        self.playerHand = PlayerDeck([])
         self.score = 0
             
     

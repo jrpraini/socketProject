@@ -36,7 +36,7 @@ class SixCardGolf:
 
         self.game_state += f"\n\nDiscard: {self.discard[-1]}\n"
         for player in self.players:
-            self.game_state += f"\n{player.name}'s Deck:\n\n{player.hand}\n\n"
+            self.game_state += f"\n{player.name}'s Deck:\n\n{player.playerHand}\n\n"
 
         self.game_state += f'{self.players[self.current_player].name}\'s turn\n\n'
     
@@ -45,7 +45,7 @@ class SixCardGolf:
 
     def all_cards_face_up(self):
         for player in self.players:
-            if not player.hand.all_cards_face_up():
+            if not player.playerHand.all_cards_face_up():
                 return False
         return True
         
@@ -55,11 +55,12 @@ class SixCardGolf:
         self.deck.shuffle()
         for player in self.players:
             cards = [self.deck.draw() for _ in range(6)]  
-            player.hand = PlayerDeck(cards)
-            player.hand.flip_first_two()
+            player.playerHand = PlayerDeck(cards)
+            player.playerHand.flip_first_two()
 
 
     def game(self):
+        print("Starting game...")
         while self.round <= self.num_holes:
             self.deal()  
             self.stock = self.deck.deck 
@@ -81,25 +82,25 @@ class SixCardGolf:
         # self.end_game()
     
     def replace_card(self, player, drawn_card):
-        data = sendAndRecieve(self.socket, f"INPUT: Enter the position of the card you want to replace: \n{player.hand}", player.ip, player.port)
+        data,_ = sendAndRecieve(self.socket, f"INPUT: Enter the position of the card you want to replace: \n{player.playerHand}", player.ip, player.port)
         card_position = int(data.decode('utf-8'))
 
         if(card_position in range(6)):
-            replaced_card = player.hand[card_position]
-            player.hand[card_position] = drawn_card
-            player.hand[card_position].flip()
+            replaced_card = player.playerHand.hand[card_position]
+            player.playerHand.hand[card_position] = drawn_card
+            player.playerHand.hand[card_position].flip()
             self.discard.append(replaced_card)
             send_message(self.socket, f"Replaced {replaced_card.rank} of {replaced_card.suit} with {drawn_card.rank} of {drawn_card.suit}", player.ip, player.port)
 
     def select_stock(self, player, drawn_card):
-        data = sendAndRecieve(self.socket, f"INPUT: Select the card position (0-5) to replace, or -1 to discard the drawn card: \n{player.hand}", player.ip, player.port)
+        data,_ = sendAndRecieve(self.socket, f"INPUT: Select the card position (0-5) to replace, or -1 to discard the drawn card: \n{player.playerHand}", player.ip, player.port)
         card_to_replace = int(data.decode('utf-8'))
         
         if card_to_replace in range(6):
-            if not player.hand[card_to_replace].face_up:
-                player.hand[card_to_replace].flip()
-                swap_card = player.hand[card_to_replace]
-                player.hand[card_to_replace] = drawn_card
+            if not player.playerHand.hand[card_to_replace].face_up:
+                player.playerHand.hand[card_to_replace].flip()
+                swap_card = player.playerHand.hand[card_to_replace]
+                player.playerHand.hand[card_to_replace] = drawn_card
                 self.discard.append(swap_card)
                 send_to_all_players(self.socket, self.players, f"{player.name} swapped {swap_card} for {drawn_card}")
         
@@ -113,14 +114,14 @@ class SixCardGolf:
 
 
     def select_discard(self, player, drawn_card):
-        data = sendAndRecieve(self.socket, f"INPUT: Select the card position (0-5) to replace \n{player.hand}", player.ip, player.port)
+        data,_ = sendAndRecieve(self.socket, f"INPUT: Select the card position (0-5) to replace \n{player.playerHand}", player.ip, player.port)
         card_to_replace = int(data.decode('utf-8'))
 
         if card_to_replace in range(6):
-            if not player.hand[card_to_replace].face_up:
-                player.hand[card_to_replace].flip()
-                swap_card = player.hand[card_to_replace]
-                player.hand[card_to_replace] = drawn_card
+            if not player.playerHand.hand[card_to_replace].face_up:
+                player.playerHand.hand[card_to_replace].flip()
+                swap_card = player.playerHand.hand[card_to_replace]
+                player.playerHand.hand[card_to_replace] = drawn_card
                 self.discard.append(swap_card)
                 send_to_all_players(self.socket, self.players, f"{player.name} swapped {swap_card} for {drawn_card}")
                 
@@ -152,29 +153,29 @@ class SixCardGolf:
 
     
     def position_to_swap(self, current_player, swap_player):
-        enemy_hand = swap_player.hand
+        enemy_hand = swap_player.playerHand
 
-        data = sendAndRecieve(self.socket, f"INPUT: Enter the position of the card you want to swap: \n{enemy_hand}", current_player.ip, current_player.port)
+        data,_ = sendAndRecieve(self.socket, f"INPUT: Enter the position of the card you want to swap: \n{enemy_hand}", current_player.ip, current_player.port)
         card_position = int(data.decode('utf-8'))
 
         if(card_position in range(6)):
-            if swap_player.hand[card_position].face_up:
+            if swap_player.playerHand.hand[card_position].face_up:
                 send_message(self.socket, "You cannot swap a face up card. Please enter a valid card position.", current_player.ip, current_player.port)
                 return self.position_to_swap(current_player, swap_player)
             else:
-                swap_player.hand[card_position].flip()
+                swap_player.playerHand.hand[card_position].flip()
                 return card_position
         else:
             send_message(self.socket, "Invalid card position. Please enter a valid card position.", current_player.ip, current_player.port)
             return self.position_to_swap(current_player, swap_player)
 
     def player_position_to_swap(self, player):
-        data = sendAndRecieve(self.socket, "INPUT: Enter the position of the card you want to swap out.", player.ip, player.port)
+        data,_ = sendAndRecieve(self.socket, "INPUT: Enter the position of the card you want to swap out.", player.ip, player.port)
         player_card_position = int(data.decode('utf-8'))
 
         if(player_card_position in range(6)):
-            if not player.hand[player_card_position].face_up:
-                player.hand[player_card_position].flip()
+            if not player.playerHand.hand[player_card_position].face_up:
+                player.playerHand.hand[player_card_position].flip()
             return player_card_position
         else:
             send_message(self.socket, "Invalid card position. Please enter a valid card position.", player.ip, player.port)
@@ -184,7 +185,7 @@ class SixCardGolf:
         player_names = [p.name for p in self.players]
         player_names.remove(player.name)
 
-        data = sendAndRecieve(self.socket, f"INPUT: Enter the name of the player you want to swap with:\n {player_names}", player.ip, player.port)
+        data,_ = sendAndRecieve(self.socket, f"INPUT: Enter the name of the player you want to swap with:\n {player_names}", player.ip, player.port)
         player_name = data.decode('utf-8')
         swap_player = None
 
@@ -198,10 +199,10 @@ class SixCardGolf:
         enemy_card_position = self.position_to_swap(player, swap_player)
         player_card_position = self.player_position_to_swap(player)
 
-        player.hand[player_card_position], swap_player.hand[enemy_card_position] = swap_player.hand[enemy_card_position], player.hand[player_card_position]
+        player.playerHand.hand[player_card_position], swap_player.playerHand.hand[enemy_card_position] = swap_player.playerHand.hand[enemy_card_position], player.playerHand.hand[player_card_position]
         
-        send_message(self.socket, f"Swapped {player.hand[player_card_position]} with {swap_player.hand[enemy_card_position]}", player.ip, player.port)
-        send_message(self.socket, f"Player {player.name} just swapped {swap_player.hand[enemy_card_position]} for {player.hand[player_card_position]}", swap_player.ip, swap_player.port)
+        send_message(self.socket, f"Swapped {player.playerHand.hand[player_card_position]} with {swap_player.playerHand.hand[enemy_card_position]}", player.ip, player.port)
+        send_message(self.socket, f"Player {player.name} just swapped {swap_player.playerHand.hand[enemy_card_position]} for {player.playerHand.hand[player_card_position]}", swap_player.ip, swap_player.port)
 
 
     # Move to the next round and rotate the dealer
@@ -220,7 +221,7 @@ class SixCardGolf:
     # Calculate the score of each player at the end of the round
     def calculate_scores(self):
         for player in self.players:
-            player.score += player.hand.calculate_score()
+            player.score += player.playerHand.calculate_score()
             print(f"{player.name}'s score: {player.score}")
 
     # End the game after all rounds
