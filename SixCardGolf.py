@@ -1,7 +1,6 @@
 from Deck import Deck
 from PlayerDeck import PlayerDeck
 from PlayerClass import Player
-import random
 
 def send_to_all_players(socket, players, message):
     for player in players:
@@ -82,7 +81,7 @@ class SixCardGolf:
         # self.end_game()
     
     def replace_card(self, player, drawn_card):
-        data = sendAndRecieve(self.socket, f"Enter the position of the card you want to replace: \n{player.hand}", player.ip, player.port)
+        data = sendAndRecieve(self.socket, f"INPUT: Enter the position of the card you want to replace: \n{player.hand}", player.ip, player.port)
         card_position = int(data.decode('utf-8'))
 
         if(card_position in range(6)):
@@ -93,7 +92,7 @@ class SixCardGolf:
             send_message(self.socket, f"Replaced {replaced_card.rank} of {replaced_card.suit} with {drawn_card.rank} of {drawn_card.suit}", player.ip, player.port)
 
     def select_stock(self, player, drawn_card):
-        data = sendAndRecieve(self.socket, f"Select the card position (0-5) to replace, or -1 to discard the drawn card: \n{player.hand}", player.ip, player.port)
+        data = sendAndRecieve(self.socket, f"INPUT: Select the card position (0-5) to replace, or -1 to discard the drawn card: \n{player.hand}", player.ip, player.port)
         card_to_replace = int(data.decode('utf-8'))
         
         if card_to_replace in range(6):
@@ -114,7 +113,7 @@ class SixCardGolf:
 
 
     def select_discard(self, player, drawn_card):
-        data = sendAndRecieve(self.socket, f"Select the card position (0-5) to replace \n{player.hand}", player.ip, player.port)
+        data = sendAndRecieve(self.socket, f"INPUT: Select the card position (0-5) to replace \n{player.hand}", player.ip, player.port)
         card_to_replace = int(data.decode('utf-8'))
 
         if card_to_replace in range(6):
@@ -133,10 +132,11 @@ class SixCardGolf:
     def player_turn(self, player):
         send_to_all_players(self.socket, self.players, self.current_game_state()) 
 
-        message = f"Your turn, {player.name}."
+        message = f"INPUT: Your turn, {player.name}."
         message += f'\nYou have the option to draw from the stock, draw from discard pile, or swap a for another player\'s face down card.'
         message += f'Choose \'stock\' or \'discard\' to draw a card, or \'swap\' to swap a card with another player.'
-        data = sendAndRecieve(self.socket, message, player.ip, player.port)
+
+        data,_ = sendAndRecieve(self.socket, message, player.ip, player.port)
 
         choice = data.decode('utf-8')
 
@@ -154,7 +154,7 @@ class SixCardGolf:
     def position_to_swap(self, current_player, swap_player):
         enemy_hand = swap_player.hand
 
-        data = sendAndRecieve(self.socket, f"Enter the position of the card you want to swap: \n{enemy_hand}", current_player.ip, current_player.port)
+        data = sendAndRecieve(self.socket, f"INPUT: Enter the position of the card you want to swap: \n{enemy_hand}", current_player.ip, current_player.port)
         card_position = int(data.decode('utf-8'))
 
         if(card_position in range(6)):
@@ -169,7 +169,7 @@ class SixCardGolf:
             return self.position_to_swap(current_player, swap_player)
 
     def player_position_to_swap(self, player):
-        data = sendAndRecieve(self.socket, "Enter the position of the card you want to swap out.", player.ip, player.port)
+        data = sendAndRecieve(self.socket, "INPUT: Enter the position of the card you want to swap out.", player.ip, player.port)
         player_card_position = int(data.decode('utf-8'))
 
         if(player_card_position in range(6)):
@@ -184,7 +184,7 @@ class SixCardGolf:
         player_names = [p.name for p in self.players]
         player_names.remove(player.name)
 
-        data = sendAndRecieve(self.socket, f"Enter the name of the player you want to swap with:\n {player_names}", player.ip, player.port)
+        data = sendAndRecieve(self.socket, f"INPUT: Enter the name of the player you want to swap with:\n {player_names}", player.ip, player.port)
         player_name = data.decode('utf-8')
         swap_player = None
 
@@ -212,7 +212,8 @@ class SixCardGolf:
         self.stock = []
         self.discard = []
         self.roundInProgress = True
-        self.current_player = (self.current_player + 1) % self.num_players
+        self.player_to_start = (self.player_to_start + 1) % self.num_players
+        self.current_player = self.player_to_start
 
         
 

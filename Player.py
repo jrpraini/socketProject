@@ -24,8 +24,10 @@ def listen_for_peer_messages(client_ip, p_port):
         data, addr = sock.recvfrom(1024)  
         decoded_message = data.decode('utf-8')
         print(decoded_message)
-            
-        return data, addr
+
+        if decoded_message.startswith('INPUT'):
+            req = input('')
+            send_message(sock, req, addr[0], addr[1])
 
 def main():
     req = input('Send to tracker:\n\n')  # Prompt
