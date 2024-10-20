@@ -6,10 +6,10 @@ from SixCardGolf import SixCardGolf
 server_ip = '10.120.70.133'
 server_port = 50500
 
-#Sends requests to tracker, prints response and returns data and addr for manipulation if needed
+
 def sendAndRecieve(sock, message):
     sock.sendto(message.encode('utf-8'), (server_ip, server_port))
-    data,addr = sock.recvfrom(1024)
+    data, addr = sock.recvfrom(1024)
     return data, addr
 
 def listen_for_peer_messages(client_ip, p_port):
@@ -17,12 +17,22 @@ def listen_for_peer_messages(client_ip, p_port):
     sock.bind((client_ip, int(p_port)))
 
     while True:
-        data, addr = sock.recvfrom(1024)  # Buffer size of 1024 bytes
-        print(f"Message from peer {addr}: {data.decode('utf-8')}")
+        data, addr = sock.recvfrom(1024)  
         return data, addr
-    
+
+class Player:
+    def __init__(self, name, ip, port):
+        self.name = name
+        self.ip = ip
+        self.port = port
+        self.hand = []  
+        self.score = 0  # For keeping track of scores
+
+    def __repr__(self):
+        return f"Player({self.name}, {self.ip}, {self.port})"
+
 def main():
-    req = input('Send to tracker:\n\n') #Prompt
+    req = input('Send to tracker:\n\n')  # Prompt
 
     while True:
         client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -33,13 +43,13 @@ def main():
             data, _ = sendAndRecieve(client, req)
             if data.decode('utf-8').startswith('SUCCESS'):
                 listener_thread = threading.Thread(target=listen_for_peer_messages, args=(ip, p_port))
-                listener_thread.daemon = True 
+                listener_thread.daemon = True
                 listener_thread.start()
 
 
             req = input('Send to server\n\n')
             client.close()
-        
+
         elif req.startswith('query players') or req.startswith('query games') or req.startswith('de-register'):
             data, _ = sendAndRecieve(client, req)
             print(data.decode('utf-8'))
@@ -52,20 +62,57 @@ def main():
             data, _ = sendAndRecieve(client, req)
 
             if data.decode('utf-8').startswith('SUCCESS'):
-                _, players_in_game = data.decode('utf-8').split(':',1)
-                players_in_game = players_in_game.strip().split(',')
-                print(f'Players in game: {players_in_game}')
-                req = input('Send to server\n\n')
-            else:
-                print(data.decode('utf-8'))
-                req = input('Send to server\n\n')
+                _, players_in_game = data.decode('utf-8').split(':', 1)
+                
+                
+                player_data_str = players_in_game.split('Players:')[-1]
+                player_data_str = player_data_str.replace('[', '').replace(']', '').replace('(', '').replace(')', '').replace("'", "")
+                
+                # Debugging the cleaned player string
+                print(f"Cleaned Player Data String: {player_data_str}")
+
+                
+                player_info_list = player_data_str.split(',')
+
+                game_players = []
+
+                # Parsing player information
+                for i in range(0, len(player_info_list), 3):  # (name, ip, port) 
+                    try:
+                        player_name = player_info_list[i].strip()
+                        player_ip = player_info_list[i+1].strip()
+                        player_port = player_info_list[i+2].strip()
+                        game_players.append(Player(player_name, player_ip, int(player_port)))
+                    except (IndexError, ValueError) as e:
+                        print(f"Error parsing player information: {e}")
+                        continue
+
+                #  initialized
+                if len(game_players) == 0:
+                    print("Error: No players were initialized. Cannot start the game.")
+                    return
+
+                #  Output initialized players
+                print(f"Initialized Players: {game_players}")
+
+                game = SixCardGolf(num_players=len(game_players), num_holes=int(num_holes), players=game_players, dealer_client=0)
+
+                # Start  game
+                print("Starting the game with the selected players...")
+                game.start_game()
+
+                # Exit  loop after game starts
+                break
 
         elif req == 'quit':
             client.close()
             break
-        
+
         else:
             req = input('Send to server\n\n')
+
+
+            
 
 
 

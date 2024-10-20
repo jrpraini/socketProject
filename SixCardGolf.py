@@ -25,23 +25,23 @@ class SixCardGolf:
             face_up_indices = random.sample(range(6), 2)  # Pick two random cards to be face-up
             for index in face_up_indices:
                 player.hand[index].flip()  # Flip two random cards face-up
-            player.arrange_hand()  # Assuming player has a method to arrange their cards in two rows of 3
+            
 
-    # Start the game: Shuffle deck and begin playing
+   
     def start_game(self):
         self.deal()  # Deal cards to each player for the first round
-        self.play_game()  # Begin the game logic
+        self.play_game()  
 
     def play_game(self):
         while self.round <= self.num_holes:
             print(f"Round {self.round} begins.")
             
             # Reset the deck, shuffle, and reset stock and discard piles
-            self.deck = Deck.Deck()  # Create a new deck for each round
-            self.deal()  # Deal fresh hands to all players
-            self.stock = self.deck.deck[:]  # Create a stockpile from the new deck
-            self.discard.clear()  # Reset the discard pile
-            self.discard.append(self.stock.pop())  # Start the discard pile with one card from the stock
+            self.deck = Deck.Deck()  
+            self.deal()  
+            self.stock = self.deck.deck[:]  
+            self.discard.clear()  
+            self.discard.append(self.stock.pop()) 
 
             # Play until all cards are face up for all players
             while not all(self.all_cards_face_up(player) for player in self.players): 
