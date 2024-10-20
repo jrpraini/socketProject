@@ -1,43 +1,55 @@
 import Deck
+from PlayerDeck import PlayerDeck
 import random
+
+def sendAndRecieve(sock, message, ip, port):
+    sock.sendto(message.encode('utf-8'), (ip, port))
+    data, addr = sock.recvfrom(1024)
+    return data, addr
+
+def send_message(sock, message, ip, port):
+    sock.sendto(message.encode('utf-8'), (ip, port))
 
 class SixCardGolf:
     def __init__(self, num_players, num_holes, players, dealer_client):
-        self.deck = Deck.Deck()  # Assuming Deck.Deck() provides a shuffled deck of cards
+        self.deck = Deck.Deck()
+        self.socket = dealer_client
         self.stock = []
         self.discard = []
         self.players = players  
         self.current_player = 0
-        self.dealer_client = dealer_client
         self.round = 1
         self.num_holes = num_holes
         self.num_players = num_players
         self.game_over = False
+        self.start_game()
 
     def all_cards_face_up(self):
-        # Check if all cards for all players are face-up
-        return all(all(card.face_up for card in player.hand) for player in self.players)
+        for player in self.players:
+            if not player.all_cards_face_up():
+                return False
+        return True
+        
 
     
     def deal(self):
         self.deck.shuffle()  # Shuffle the deck before dealing in each round
         for player in self.players:
-            player.hand = [self.deck.draw() for _ in range(6)]  
-            face_up_indices = random.sample(range(6), 2)  # Pick two random cards to be face-up
-            for index in face_up_indices:
-                player.hand[index].flip()  # Flip two random cards face-up
+            cards = [self.deck.draw() for _ in range(6)]  
+            player.hand = PlayerDeck(cards)
+            message = f"Your hand: {player.hand}"
+            send_message(self.socket, message, player.ip, player.port)
+
+
 
     # Start the game
     def start_game(self):
         self.deal()  # Deal cards to each player for the first round
-        self.play_game()  # Begin the game logic
+        # self.play_game()  # Begin the game logic
 
     def play_game(self):
         while self.round <= self.num_holes:
             print(f"Round {self.round} begins.")
-            
-            # Reset the deck, shuffle, and reset stock and discard piles
-            self.deck = Deck.Deck()  # Create a new deck for each round
             self.deal()  
             self.stock = self.deck.deck[:]  
             self.discard.append(self.stock.pop())  
@@ -58,10 +70,7 @@ class SixCardGolf:
     def player_turn(self, player):
         print(f"{player.name}, your hand:")
         for idx, card in enumerate(player.hand):
-            if card.face_up:
-                print(f"Card {idx}: {card.rank}{card.suit} (Value: {card.value}) - FACE UP")
-            else:
-                print(f"Card {idx}: ***")
+            print(card)
 
         print(f"{player.name}, you have the option to draw from the stock or discard pile.")
         choice = input("Choose 'stock' or 'discard': ").strip().lower()
@@ -100,11 +109,6 @@ class SixCardGolf:
         self.round += 1
         if self.round <= self.num_holes:
             self.rotate_dealer()
-
-    # Rotate the dealer for the next round
-    def rotate_dealer(self):
-        print(f"The dealer rotates.")
-        self.dealer_client = (self.dealer_client + 1) % self.num_players
 
     # Calculate the score of each player at the end of the round
     def calculate_scores(self):

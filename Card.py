@@ -4,22 +4,26 @@ class Card:
         self.rank = rank
         self.value = None
         self.set_value()
-        self.face_up = False # facing up or down flag 
+        self.face_up = False
 
     
     def set_value(self):
-        if self.rank in ['J', 'Q', 'K']: # set face cards 10 points 
+        if self.rank in ['J', 'Q']:
             self.value = 10 
         elif self.rank == 'A':
             self.value = 1 
         elif self.rank == '2':
             self.value = -2
+        elif self.rank == 'K':
+            self.value = 0
         else:
-            self.value = int(self.rank)  # 3 to 10 
+            self.value = int(self.rank)
 
     def flip(self):
         self.face_up = True #flip card 
 
-    def __repr__(self):
-       return f"{self.rank}{self.suit}"
-       #return f"{self.rank} {self.suit} (value: {self.value})"
+    def __str__(self):
+        if self.face_up:
+            return f" {self.rank}{self.suit}"
+        else:
+            return "***"

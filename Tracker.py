@@ -55,7 +55,7 @@ def handle_client(server, data, addr):
             new_tuple = (dealer[0], dealer[1], dealer[2], "in-play")
             players[player_name] = new_tuple
 
-            players_in_game = [(player_name, dealer[0], dealer[2])]  # Add dealer to the game
+            players_in_game = [(player_name, dealer[0], dealer[2])] 
 
             for _ in range(int(num_players)):
                 new_player_name = free_players.pop(random.randint(0, len(free_players) - 1))
@@ -68,7 +68,6 @@ def handle_client(server, data, addr):
             game_id = random.randint(1000, 9999)
             games[game_id] = (player_name, players_in_game, num_holes)
             
-            print(players_in_game)
             response = f"SUCCESS: Game started with ID {game_id}. Players: {players_in_game}"
             server.sendto(response.encode('utf-8'), addr)
 

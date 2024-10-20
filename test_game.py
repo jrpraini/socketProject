@@ -11,10 +11,6 @@ class Player:
         self.hand = []
         self.score = 0
 
-    def arrange_hand(self):
-        # Arranges the cards in two rows of three for display
-        print(f" * ")
-
     def calculate_score(self):
         # Just a mock calculation for testing purposes
         self.score = sum(card.value for card in self.hand)
