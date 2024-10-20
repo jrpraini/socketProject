@@ -3,10 +3,10 @@ import random
 
 class SixCardGolf:
     def __init__(self, num_players, num_holes, players, dealer_client):
-        self.deck = Deck.Deck()  # Deck class assumed to provide a shuffled deck
+        self.deck = Deck.Deck()  # Assuming Deck.Deck() provides a shuffled deck of cards
         self.stock = []
         self.discard = []
-        self.players = players  # Now this properly assigns the players list
+        self.players = players  
         self.current_player = 0
         self.dealer_client = dealer_client
         self.round = 1
@@ -14,37 +14,36 @@ class SixCardGolf:
         self.num_players = num_players
         self.game_over = False
 
-    def all_cards_face_up(self, player):
-        return all(card.face_up for card in player.hand)
+    def all_cards_face_up(self):
+        # Check if all cards for all players are face-up
+        return all(all(card.face_up for card in player.hand) for player in self.players)
 
-    # Deal cards to players
+    
     def deal(self):
         self.deck.shuffle()  # Shuffle the deck before dealing in each round
         for player in self.players:
-            player.hand = [self.deck.draw() for _ in range(6)]  # Deal 6 cards per player
+            player.hand = [self.deck.draw() for _ in range(6)]  
             face_up_indices = random.sample(range(6), 2)  # Pick two random cards to be face-up
             for index in face_up_indices:
                 player.hand[index].flip()  # Flip two random cards face-up
-            
 
-   
+    # Start the game
     def start_game(self):
         self.deal()  # Deal cards to each player for the first round
-        self.play_game()  
+        self.play_game()  # Begin the game logic
 
     def play_game(self):
         while self.round <= self.num_holes:
             print(f"Round {self.round} begins.")
             
             # Reset the deck, shuffle, and reset stock and discard piles
-            self.deck = Deck.Deck()  
+            self.deck = Deck.Deck()  # Create a new deck for each round
             self.deal()  
             self.stock = self.deck.deck[:]  
-            self.discard.clear()  
-            self.discard.append(self.stock.pop()) 
+            self.discard.append(self.stock.pop())  
 
             # Play until all cards are face up for all players
-            while not all(self.all_cards_face_up(player) for player in self.players): 
+            while not self.all_cards_face_up():
                 for i, player in enumerate(self.players):
                     self.current_player = i
                     print(f"It's {player.name}'s turn.")
@@ -60,8 +59,7 @@ class SixCardGolf:
         print(f"{player.name}, your hand:")
         for idx, card in enumerate(player.hand):
             if card.face_up:
-                print(f"Card {idx}: {card.rank}{card.suit}")
-                #print(f"Card {idx}: {card.rank} of {card.suit} (Value: {card.value}) - FACE UP")
+                print(f"Card {idx}: {card.rank}{card.suit} (Value: {card.value}) - FACE UP")
             else:
                 print(f"Card {idx}: ***")
 
@@ -77,7 +75,7 @@ class SixCardGolf:
             return self.player_turn(player)
 
         print(f"{player.name} drew: {drawn_card.rank} of {drawn_card.suit} (value: {drawn_card.value})")
-        
+
         for idx, card in enumerate(player.hand):
             if card.face_up:
                 print(f"Card {idx}: {card.rank} of {card.suit} (Value: {card.value}) - FACE UP")
@@ -89,7 +87,7 @@ class SixCardGolf:
         if card_to_replace in range(6):
             replaced_card = player.hand[card_to_replace]
             player.hand[card_to_replace] = drawn_card
-            player.hand[card_to_replace].flip()  # New card is now face up
+            player.hand[card_to_replace].flip() 
             self.discard.append(replaced_card)
             print(f"Replaced {replaced_card.rank} of {replaced_card.suit} with {drawn_card.rank} of {drawn_card.suit}")
         else:
@@ -111,10 +109,8 @@ class SixCardGolf:
     # Calculate the score of each player at the end of the round
     def calculate_scores(self):
         for player in self.players:
-            player.calculate_score()
+            player.calculate_score()  # Calculate the score for each player
             print(f"{player.name}'s score: {player.score}")
-
-
 
     # End the game after all rounds
     def end_game(self):
