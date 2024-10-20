@@ -2,6 +2,29 @@
 class PlayerDeck:
     def __init__(self, cards):
         self.hand = cards
+        self.score = 0
+    
+    def calculate_score(self):
+        self.score = 0
+        calculate = [0,1,2,3,4,5]
+
+        if self.hand[0].suit == self.hand[3].suit:
+            self.score += 0
+            calculate.remove(0)
+            calculate.remove(3)
+        
+        if self.hand[1].suit == self.hand[4].suit:
+            self.score += 0
+            calculate.remove(1)
+            calculate.remove(4)
+        
+        if self.hand[2].suit == self.hand[5].suit:
+            self.score += 0
+            calculate.remove(2)
+            calculate.remove(5)
+        
+        for i in calculate:
+            self.score += self.hand[i].value
 
     def flip_first_two(self):
         self.hand[0].flip()

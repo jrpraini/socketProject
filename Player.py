@@ -24,6 +24,7 @@ def listen_for_peer_messages(client_ip, p_port):
         data, addr = sock.recvfrom(1024)  
         decoded_message = data.decode('utf-8')
         print(decoded_message)
+            
         return data, addr
 
 def main():
@@ -97,6 +98,7 @@ main()
 # register Joe 10.120.70.112 50000 50001
 # register Bob 10.120.70.120 50003 50004
 # start game Joe 1 9
+# clear
 
 
 #general 3: 10.120.70.112
