@@ -3,7 +3,6 @@ class PlayerDeck:
     def __init__(self, cards):
         self.hand = cards
         self.score = 0
-        self.flip_first_two()
 
     def flip_first_two(self):
         self.hand[0].flip()

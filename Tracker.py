@@ -68,7 +68,7 @@ def handle_client(server, data, addr):
             game_id = random.randint(1000, 9999)
             games[game_id] = (player_name, players_in_game, num_holes)
             
-            response = f"SUCCESS: Game started with ID {game_id}. Players: {players_in_game}"
+            response = f"SUCCESS: {players_in_game}"
             server.sendto(response.encode('utf-8'), addr)
 
         # Query all registered players

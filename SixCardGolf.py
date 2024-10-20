@@ -2,6 +2,10 @@ import Deck
 from PlayerDeck import PlayerDeck
 import random
 
+def send_to_all_players(socket, players, message):
+    for player in players:
+        send_message(player.socket, message, player.ip, player.port)
+
 def sendAndRecieve(sock, message, ip, port):
     sock.sendto(message.encode('utf-8'), (ip, port))
     data, addr = sock.recvfrom(1024)
@@ -37,9 +41,7 @@ class SixCardGolf:
         for player in self.players:
             cards = [self.deck.draw() for _ in range(6)]  
             player.hand = PlayerDeck(cards)
-            message = f"Your hand: {player.hand}"
-            send_message(self.socket, message, player.ip, player.port)
-
+            player.hand.flip_first_two()
 
 
     # Start the game
@@ -49,7 +51,9 @@ class SixCardGolf:
 
     def play_game(self):
         while self.round <= self.num_holes:
-            print(f"Round {self.round} begins.")
+            round_message = f"Round {self.round} has started."
+            send_to_all_players(self.socket, self.players, round_message)
+
             self.deal()  
             self.stock = self.deck.deck[:]  
             self.discard.append(self.stock.pop())  

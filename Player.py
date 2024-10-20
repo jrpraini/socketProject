@@ -2,6 +2,7 @@ import socket
 import threading
 from PlayerDeck import PlayerDeck
 from SixCardGolf import SixCardGolf
+import ast
 #Global for all to access
 server_ip = '10.120.70.133'
 server_port = 50500
@@ -60,7 +61,8 @@ def listen_for_peer_messages(client_ip, p_port):
 
     while True:
         data, addr = sock.recvfrom(1024)  
-        print({data.decode('utf-8')})
+        decoded_message = data.decode('utf-8')
+        print(decoded_message)
         return data, addr
 
 def main():
@@ -96,11 +98,14 @@ def main():
             if data.decode('utf-8').startswith('SUCCESS'):
                 _, players_in_game = data.decode('utf-8').split(':', 1)
 
+                player_info_list = ast.literal_eval(players_in_game.strip())
+
                 game_players = []
 
+                print(player_info_list)
+
                 # Parsing player information
-                for player_info in players_in_game:
-                    print(player_info)
+                for player_info in player_info_list:
                     player_name = player_info[0].strip()
                     player_ip = player_info[1].strip()
                     player_port = int(player_info[2].strip())
@@ -112,11 +117,10 @@ def main():
                     return
 
                 #  Output initialized players
-                # print(f"Initialized Players:\n {game_players}")
-                # print("Starting the game with the selected players...")
-                # SixCardGolf(num_players=len(game_players), num_holes=int(num_holes), players=game_players, dealer_client=client)
+                SixCardGolf(num_players=len(game_players), num_holes=int(num_holes), players=game_players, dealer_client=client)
 
                 # Exit  loop after game starts
+                client.close()
 
         elif req == 'quit':
             client.close()
