@@ -1,10 +1,11 @@
 import Deck
 from PlayerDeck import PlayerDeck
+from PlayerClass import Player
 import random
 
 def send_to_all_players(socket, players, message):
     for player in players:
-        send_message(player.socket, message, player.ip, player.port)
+        send_message(socket, message, player.ip, player.port)
 
 def sendAndRecieve(sock, message, ip, port):
     sock.sendto(message.encode('utf-8'), (ip, port))
@@ -26,7 +27,19 @@ class SixCardGolf:
         self.num_holes = num_holes
         self.num_players = num_players
         self.game_over = False
+        self.game_state = ''
         self.start_game()
+
+    def current_game_state(self):
+        self.game_state = ''
+
+        for player in self.players:
+            self.game_state += f"\n{player.name}'s Deck:\n\n{player.hand}\n\n"
+            self.game_state += f"Discard: {self.discard[-1]}\n\n"
+            self.game_state += f'Player {self.players[self.current_player].name}\'s turn\n\n'
+        
+        return self.game_state
+
 
     def all_cards_face_up(self):
         for player in self.players:
@@ -37,38 +50,37 @@ class SixCardGolf:
 
     
     def deal(self):
-        self.deck.shuffle()  # Shuffle the deck before dealing in each round
+        self.deck.shuffle()
         for player in self.players:
             cards = [self.deck.draw() for _ in range(6)]  
             player.hand = PlayerDeck(cards)
             player.hand.flip_first_two()
 
 
-    # Start the game
     def start_game(self):
-        self.deal()  # Deal cards to each player for the first round
-        # self.play_game()  # Begin the game logic
-
-    def play_game(self):
         while self.round <= self.num_holes:
             round_message = f"Round {self.round} has started."
-            send_to_all_players(self.socket, self.players, round_message)
-
             self.deal()  
             self.stock = self.deck.deck[:]  
-            self.discard.append(self.stock.pop())  
+            discard_card = self.stock.pop().flip()
+            self.discard.append(discard_card) 
 
-            # Play until all cards are face up for all players
-            while not self.all_cards_face_up():
-                for i, player in enumerate(self.players):
-                    self.current_player = i
-                    print(f"It's {player.name}'s turn.")
-                    self.player_turn(player)
+            self.game_state = self.current_game_state()
 
-            self.calculate_scores()
-            self.next_round()
+            round_message += self.game_state
+            send_to_all_players(self.socket, self.players, round_message) 
 
-        self.end_game()
+        #     # Play until all cards are face up for all players
+        #     while not self.all_cards_face_up():
+        #         for i, player in enumerate(self.players):
+        #             self.current_player = i
+        #             print(f"It's {player.name}'s turn.")
+        #             self.player_turn(player)
+
+        #     self.calculate_scores()
+        #     self.next_round()
+
+        # self.end_game()
 
     # Player's turn logic
     def player_turn(self, player):

@@ -20,10 +20,13 @@ class Card:
             self.value = int(self.rank)
 
     def flip(self):
-        self.face_up = True #flip card 
+        self.face_up = True
 
     def __str__(self):
         if self.face_up:
-            return f" {self.rank}{self.suit}"
+            if self.rank == '10':
+                return f"{self.rank}{self.suit}"
+            else:
+                return f" {self.rank}{self.suit}"
         else:
             return "***"
