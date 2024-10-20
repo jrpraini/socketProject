@@ -27,7 +27,11 @@ class Player:
         self.port = port
         self.hand = []  
         self.score = 0  # For keeping track of scores
-
+    
+    def calculate_score(self):
+        
+        self.score = sum(card.value for card in self.hand if card.face_up)
+    
     def __repr__(self):
         return f"Player({self.name}, {self.ip}, {self.port})"
 
@@ -115,7 +119,4 @@ def main():
 
 
             
-
-
-
 main()
