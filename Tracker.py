@@ -18,7 +18,7 @@ def handle_client(server, data, addr):
             if player_name in players:
                 server.sendto(b"FAILURE: Duplicate player name\n", addr)
             else:
-                
+                # Check if the same IP and port combination already exists
                 matching_players = [player for player, info in players.items() if info[0] == ip and info[1] == t_port]
 
                 if matching_players:
@@ -26,56 +26,50 @@ def handle_client(server, data, addr):
                 else:
                     players[player_name] = (ip, t_port, p_port, "free")
                     free_players.append(player_name)
-                    print(f"Player {player_name} added to free_players. Current free players: {free_players}")
-
                     server.sendto(b"SUCCESS: Player registered\n", addr)
 
         # Start a game
         elif message.startswith("start game"):
             _,_, player_name, num_players, num_holes = message.split(maxsplit=4)
-            print(f"Start game command received: {player_name}, {num_players}, {num_holes}")
+
 
             if player_name not in players:
                 server.sendto(b"FAILURE: Player not registered\n", addr)
                 return
 
-            if int(num_players) < 2 or int(num_players) > 4:
-                print("Invalid number of players")
+            if int(num_players) < 1 or int(num_players) > 3:
                 server.sendto(b"FAILURE: Invalid number of players\n", addr)
                 return
 
             if len(free_players) < int(num_players):
-                print(f"Free players: {free_players}")
-                print(f"Number of free players: {len(free_players)}")
-                print("Not enough free players available")  #checks , free players not being reassigned after the game ends 
                 server.sendto(b"FAILURE: Not enough free players\n", addr)
                 return
 
             if int(num_holes) < 1 or int(num_holes) > 9:
-                print("Invalid number of holes")
                 server.sendto(b"FAILURE: Invalid number of holes\n", addr)
                 return
 
-            
+            #Find dealer in free players, remove from free players and add to game
             dealer = players[player_name]
-            players[player_name] = (dealer[0], dealer[1], dealer[2], "in-play")
+            free_players.remove(player_name)
+            new_tuple = (dealer[0], dealer[1], dealer[2], "in-play")
+            players[player_name] = new_tuple
 
-            # Select random free players to participate in the game
             players_in_game = [(player_name, dealer[0], dealer[2])]  # Add dealer to the game
-            print(f"Dealer assigned: {player_name}")
 
-            for _ in range(int(num_players) - 1):
-                player = free_players.pop(random.randint(0, len(free_players) - 1))
-                print(f"Selected player: {player}")
-                players[player] = (players[player][0], players[player][1], players[player][2], "in-play")
-                players_in_game.append((player, players[player][0], players[player][2]))
+            for _ in range(int(num_players)):
+                new_player_name = free_players.pop(random.randint(0, len(free_players) - 1))
+                old_player = players[new_player_name]
+                new_player_tuple = (old_player[0], old_player[1], old_player[2], "in-play")
+                players[new_player_name] = new_player_tuple
+                players_in_game.append((new_player_name, new_player_tuple[0], new_player_tuple[2]))
 
             # Assign a unique game ID
             game_id = random.randint(1000, 9999)
             games[game_id] = (player_name, players_in_game, num_holes)
-
+            
+            print(players_in_game)
             response = f"SUCCESS: Game started with ID {game_id}. Players: {players_in_game}"
-            print(f"Game successfully started with ID {game_id}")
             server.sendto(response.encode('utf-8'), addr)
 
         # Query all registered players
@@ -112,10 +106,10 @@ def handle_client(server, data, addr):
         print(f"Error: {e}")
         server.sendto(b"FAILURE: An error occurred while processing your request\n", addr)
 
-
+# Binds the tracker socket to IP and port, then initializes a client thread when data is received
 def start_tracker(port):
     server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    server.bind(('192.168.0.155', port))
+    server.bind(('10.120.70.133', port))
     print(f"Tracker started on port {port}")
 
     while True:
