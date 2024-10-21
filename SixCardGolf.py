@@ -69,15 +69,17 @@ class SixCardGolf:
             #Play until one player has all cards face up
             while self.roundInProgress:
                 self.player_turn(self.players[self.current_player])
-                if self.all_cards_face_up(self.players[self.current_player]):
-                    self.roundInProgress = False                
+                for player in self.players:
+                    if(self.all_cards_face_up(player)):
+                        self.roundInProgress = False                
                 self.current_player = (self.current_player + 1) % self.num_players
 
             self.calculate_scores()
             self.next_round()
+        self.end_game()
         return
 
-        # self.end_game()
+        
 
     def player_turn(self, player):
         send_to_all_players(self.socket, self.players, self.current_game_state()) 
@@ -222,9 +224,12 @@ class SixCardGolf:
 
     # End the game after all rounds
     def end_game(self):
-        print("Game over. Final scores:")
+        send_to_all_players(self.socket, self.players, "Game over!")
         for player in self.players:
-            print(f"{player.name}: {player.score}")
+            send_to_all_players(self.socket, self.players, f"{player.name}'s final score: {player.score}")
 
         winner = min(self.players, key=lambda p: p.score)
-        print(f"The winner is {winner.name} with {winner.score} points!")
+        
+        send_to_all_players(self.socket, self.players, f"The winner is {winner.name} with a score of {winner.score}!")
+
+        return

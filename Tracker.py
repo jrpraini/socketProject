@@ -104,6 +104,7 @@ def handle_client(server, data, addr):
             for player in players_in_game:
                 new_player_tuple = (player[0], player[1], player[2], "free")
                 players[player[0]] = new_player_tuple
+                print(players)
                 free_players.append(player[0])
 
             del games[game_id]
