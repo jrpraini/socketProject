@@ -27,7 +27,6 @@ def listen_for_peer_messages(client_ip, p_port):
 
         if decoded_message.startswith('INPUT'):
             req = input('')
-            print(req)
             send_message(sock, req, addr[0], addr[1])
 
 def main():
@@ -61,7 +60,7 @@ def main():
             data, _ = sendAndRecieve(client, req, server_ip, server_port)
 
             if data.decode('utf-8').startswith('SUCCESS'):
-                _, players_in_game = data.decode('utf-8').split(':', 1)
+                _, game_id, players_in_game = data.decode('utf-8').split(':')
 
                 player_info_list = ast.literal_eval(players_in_game.strip())
 
@@ -84,7 +83,10 @@ def main():
                 #  Output initialized players
                 SixCardGolf(num_players=len(game_players), num_holes=int(num_holes), players=game_players, dealer_client=client)
 
-                # Exit  loop after game starts
+                data, _ = sendAndRecieve(client, f'end {int(game_id)} {game_players[0].name}', server_ip, server_port)
+
+                if data.decode('utf-8').startswith('SUCCESS'):
+                    print('Game ended successfully')
                 client.close()
 
         elif req == 'quit':
@@ -100,8 +102,10 @@ main()
 
 # register Joe 10.120.70.112 50000 50001
 # register Bob 10.120.70.120 50003 50004
-# start game Joe 1 9
-# clear
+# register Billy 10.120.70.120 50005 50006
+# register Grace 10.120.70.112 50007 50008
+# start game Joe 1 1
+# start Grace 1 1
 
 
 #general 3: 10.120.70.112

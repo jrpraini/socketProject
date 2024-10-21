@@ -34,20 +34,17 @@ class SixCardGolf:
     def current_game_state(self):
         self.game_state = ''
 
-        self.game_state += f"\n\nDiscard: {self.discard[-1]}\n"
         for player in self.players:
             self.game_state += f"\n{player.name}'s Deck:\n\n{player.playerHand}\n\n"
 
+        self.game_state += f"\n\nDiscard: {self.discard[-1]}\n"
         self.game_state += f'{self.players[self.current_player].name}\'s turn\n\n'
     
         return self.game_state
 
 
-    def all_cards_face_up(self):
-        for player in self.players:
-            if not player.playerHand.all_cards_face_up():
-                return False
-        return True
+    def all_cards_face_up(self, player):
+        return player.playerHand.all_cards_face_up()
         
 
     
@@ -58,7 +55,7 @@ class SixCardGolf:
             player.playerHand = PlayerDeck(cards)
             player.playerHand.flip_first_two()
 
-
+    
     def game(self):
         print("Starting game...")
         while self.round <= self.num_holes:
@@ -72,138 +69,136 @@ class SixCardGolf:
             #Play until one player has all cards face up
             while self.roundInProgress:
                 self.player_turn(self.players[self.current_player])
-                if self.all_cards_face_up():
+                if self.all_cards_face_up(self.players[self.current_player]):
                     self.roundInProgress = False                
                 self.current_player = (self.current_player + 1) % self.num_players
 
             self.calculate_scores()
             self.next_round()
+        return
 
         # self.end_game()
-    
-    def replace_card(self, player, drawn_card):
-        data,_ = sendAndRecieve(self.socket, f"INPUT: Enter the position of the card you want to replace: \n{player.playerHand}", player.ip, player.port)
-        card_position = int(data.decode('utf-8'))
-
-        if(card_position in range(6)):
-            replaced_card = player.playerHand.hand[card_position]
-            player.playerHand.hand[card_position] = drawn_card
-            player.playerHand.hand[card_position].flip()
-            self.discard.append(replaced_card)
-            send_message(self.socket, f"Replaced {replaced_card.rank} of {replaced_card.suit} with {drawn_card.rank} of {drawn_card.suit}", player.ip, player.port)
-
-    def select_stock(self, player, drawn_card):
-        data,_ = sendAndRecieve(self.socket, f"INPUT: Select the card position (0-5) to replace, or -1 to discard the drawn card: \n{player.playerHand}", player.ip, player.port)
-        card_to_replace = int(data.decode('utf-8'))
-        
-        if card_to_replace in range(6):
-            if not player.playerHand.hand[card_to_replace].face_up:
-                player.playerHand.hand[card_to_replace].flip()
-                swap_card = player.playerHand.hand[card_to_replace]
-                player.playerHand.hand[card_to_replace] = drawn_card
-                self.discard.append(swap_card)
-                send_to_all_players(self.socket, self.players, f"{player.name} swapped {swap_card} for {drawn_card}")
-        
-        elif card_to_replace == -1:
-            self.discard.append(drawn_card)
-            send_to_all_players(self.socket, self.players, f"{player.name} discarded {drawn_card}")
-            
-        else:
-            send_message(self.socket, "Invalid card position. Please enter a valid card position.", player.ip, player.port)
-            return self.select_discard(player, drawn_card)
-
-
-    def select_discard(self, player, drawn_card):
-        data,_ = sendAndRecieve(self.socket, f"INPUT: Select the card position (0-5) to replace \n{player.playerHand}", player.ip, player.port)
-        card_to_replace = int(data.decode('utf-8'))
-
-        if card_to_replace in range(6):
-            if not player.playerHand.hand[card_to_replace].face_up:
-                player.playerHand.hand[card_to_replace].flip()
-                swap_card = player.playerHand.hand[card_to_replace]
-                player.playerHand.hand[card_to_replace] = drawn_card
-                self.discard.append(swap_card)
-                send_to_all_players(self.socket, self.players, f"{player.name} swapped {swap_card} for {drawn_card}")
-                
-        else:
-            send_message(self.socket, "Invalid card position. Please enter a valid card position.", player.ip, player.port)
-            return self.select_discard(player, drawn_card)
-
 
     def player_turn(self, player):
         send_to_all_players(self.socket, self.players, self.current_game_state()) 
 
-        message = f"INPUT: Your turn, {player.name}."
-        message += f'\nYou have the option to draw from the stock, draw from discard pile, or swap a for another player\'s face down card.'
-        message += f'Choose \'stock\' or \'discard\' to draw a card, or \'swap\' to swap a card with another player.'
+        message = f"INPUT:\nYour turn, {player.name}."
+        message += f'\n\nYour hand:\n{player.playerHand}\n\n'
+        message += f'\nChoose \'stock\' to draw from the stock\n\'discard\' to draw a card from discard pile\n\'swap\' to swap a card with another player.\n'
 
         data,_ = sendAndRecieve(self.socket, message, player.ip, player.port)
-
         choice = data.decode('utf-8')
+
+        while choice not in ['stock', 'discard', 'swap']:
+            data, _ = sendAndRecieve(self.socket, "INPUT:\nInvalid choice. Please enter a valid choice.", player.ip, player.port)
+            choice = data.decode('utf-8')
 
         if choice == "stock":
             self.select_stock(player, self.stock.pop())
         elif choice == "discard":
             self.select_discard(player, self.discard.pop())
-        elif choice == "swap":
-            self.swap_card(player)
         else:
-            print("Invalid choice, you must pick either 'stock' or 'discard'.")
-            return self.player_turn(player)
+            self.swap_card(player)
+        
+        return
 
-    
-    def position_to_swap(self, current_player, swap_player):
-        enemy_hand = swap_player.playerHand
+    def select_stock(self, player, drawn_card):
+        drawn_card.flip()
+        send_message(self.socket, f"{player.name} drew {drawn_card} from the stock.", player.ip, player.port)
+        data,_ = sendAndRecieve(self.socket, f"INPUT:\nSelect the card position (0-5) to replace, or -1 to discard the drawn card: \n{player.playerHand}", player.ip, player.port)
+        card_to_replace = int(data.decode('utf-8'))
 
-        data,_ = sendAndRecieve(self.socket, f"INPUT: Enter the position of the card you want to swap: \n{enemy_hand}", current_player.ip, current_player.port)
+        while card_to_replace not in range(6) and card_to_replace != -1:
+            send_message(self.socket, "Invalid card position. Please enter a valid card position.", player.ip, player.port)
+            data,_ = sendAndRecieve(self.socket, f"INPUT:\nSelect the card position (0-5) to replace, or -1 to discard the drawn card: \n{player.playerHand}", player.ip, player.port)
+            card_to_replace = int(data.decode('utf-8'))
+        
+        if card_to_replace in range(6):
+            if not player.playerHand.hand[card_to_replace].face_up:
+                player.playerHand.hand[card_to_replace].flip()
+                swap_card = player.playerHand.hand[card_to_replace]
+                player.playerHand.hand[card_to_replace] = drawn_card
+                self.discard.append(swap_card)
+                send_to_all_players(self.socket, self.players, f"{player.name} swapped {swap_card} for {drawn_card}")
+                return
+        
+        else:
+            self.discard.append(drawn_card)
+            send_to_all_players(self.socket, self.players, f"{player.name} discarded {drawn_card}")
+            return
+
+
+    def select_discard(self, player, drawn_card):
+        data,_ = sendAndRecieve(self.socket, f"INPUT:\nSelect the card position (0-5) to replace \n{player.playerHand}", player.ip, player.port)
+        card_to_replace = int(data.decode('utf-8'))
+
+        while card_to_replace not in range(6):
+            send_message(self.socket, "Invalid card position. Please enter a valid card position.", player.ip, player.port)
+            data,_ = sendAndRecieve(self.socket, f"INPUT:\nSelect the card position (0-5) to replace \n{player.playerHand}", player.ip, player.port)
+            card_to_replace = int(data.decode('utf-8'))
+
+        if card_to_replace in range(6):
+            if not player.playerHand.hand[card_to_replace].face_up:
+                player.playerHand.hand[card_to_replace].flip()
+                swap_card = player.playerHand.hand[card_to_replace]
+                player.playerHand.hand[card_to_replace] = drawn_card
+                self.discard.append(swap_card)
+                send_to_all_players(self.socket, self.players, f"{player.name} swapped {swap_card} for {drawn_card}")
+                return
+                
+    def get_valid_card_position(self, prompt, player, card_range, check_face_down=False):
+        data, _ = sendAndRecieve(self.socket, prompt, player.ip, player.port)
         card_position = int(data.decode('utf-8'))
 
-        if(card_position in range(6)):
-            if swap_player.playerHand.hand[card_position].face_up:
-                send_message(self.socket, "You cannot swap a face up card. Please enter a valid card position.", current_player.ip, current_player.port)
-                return self.position_to_swap(current_player, swap_player)
-            else:
-                swap_player.playerHand.hand[card_position].flip()
-                return card_position
-        else:
-            send_message(self.socket, "Invalid card position. Please enter a valid card position.", current_player.ip, current_player.port)
-            return self.position_to_swap(current_player, swap_player)
+        while not(card_position in card_range and (not check_face_down or not player.playerHand.hand[card_position].face_up)):
+            invalid_msg = "\nInvalid card position. Please enter a valid card position.\n"
+            send_message(self.socket, invalid_msg, player.ip, player.port)
+            data, _ = sendAndRecieve(self.socket, prompt, player.ip, player.port)
+            card_position = int(data.decode('utf-8'))
+
+        return card_position
+
+    def position_to_swap(self, current_player, swap_player):
+        enemy_hand = swap_player.playerHand
+        prompt = f"INPUT:\nEnter the position of the card you want to swap for: \n{enemy_hand}\nThe card must be face down."
+        
+        card_position = self.get_valid_card_position(prompt, current_player, range(6), check_face_down=True)
+        swap_player.playerHand.hand[card_position].flip()
+        return card_position
 
     def player_position_to_swap(self, player):
-        data,_ = sendAndRecieve(self.socket, "INPUT: Enter the position of the card you want to swap out.", player.ip, player.port)
-        player_card_position = int(data.decode('utf-8'))
+        prompt = f"INPUT:\nEnter the position of the card you want to swap out: \n{player.playerHand}"
+        card_position = self.get_valid_card_position(prompt, player, range(6))
+        
+        if not player.playerHand.hand[card_position].face_up:
+            player.playerHand.hand[card_position].flip()
 
-        if(player_card_position in range(6)):
-            if not player.playerHand.hand[player_card_position].face_up:
-                player.playerHand.hand[player_card_position].flip()
-            return player_card_position
-        else:
-            send_message(self.socket, "Invalid card position. Please enter a valid card position.", player.ip, player.port)
-            return self.player_position_to_swap(player)
+        return card_position
 
     def swap_card(self, player):
-        player_names = [p.name for p in self.players]
-        player_names.remove(player.name)
+        player_names = [p.name for p in self.players if p.name != player.name]
 
-        data,_ = sendAndRecieve(self.socket, f"INPUT: Enter the name of the player you want to swap with:\n {player_names}", player.ip, player.port)
-        player_name = data.decode('utf-8')
-        swap_player = None
+        while True:
+            data, _ = sendAndRecieve(self.socket, f"INPUT:\nEnter the name of the player you want to swap with:\n {player_names}", player.ip, player.port)
+            player_name = data.decode('utf-8')
+            swap_player = next((p for p in self.players if p.name == player_name), None)
 
-        for p in self.players:
-            if player_name in player_names:
-                swap_player = p
+            if swap_player:
+                break
             else:
                 send_message(self.socket, "Invalid player name. Please enter a valid player name.", player.ip, player.port)
-                swap_player = self.swap_card(player)
-        
+
         enemy_card_position = self.position_to_swap(player, swap_player)
         player_card_position = self.player_position_to_swap(player)
 
-        player.playerHand.hand[player_card_position], swap_player.playerHand.hand[enemy_card_position] = swap_player.playerHand.hand[enemy_card_position], player.playerHand.hand[player_card_position]
+        # Swap the cards
+        player.playerHand.hand[player_card_position], swap_player.playerHand.hand[enemy_card_position] = (
+            swap_player.playerHand.hand[enemy_card_position],
+            player.playerHand.hand[player_card_position]
+        )
         
         send_message(self.socket, f"Swapped {player.playerHand.hand[player_card_position]} with {swap_player.playerHand.hand[enemy_card_position]}", player.ip, player.port)
         send_message(self.socket, f"Player {player.name} just swapped {swap_player.playerHand.hand[enemy_card_position]} for {player.playerHand.hand[player_card_position]}", swap_player.ip, swap_player.port)
-
 
     # Move to the next round and rotate the dealer
     def next_round(self):
@@ -222,7 +217,8 @@ class SixCardGolf:
     def calculate_scores(self):
         for player in self.players:
             player.score += player.playerHand.calculate_score()
-            print(f"{player.name}'s score: {player.score}")
+            send_to_all_players(self.socket, self.players, f"{player.name}'s score: {player.score}")
+        return
 
     # End the game after all rounds
     def end_game(self):

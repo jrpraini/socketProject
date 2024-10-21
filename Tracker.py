@@ -68,7 +68,7 @@ def handle_client(server, data, addr):
             game_id = random.randint(1000, 9999)
             games[game_id] = (player_name, players_in_game, num_holes)
             
-            response = f"SUCCESS: {players_in_game}"
+            response = f"SUCCESS: {game_id}: {players_in_game}"
             server.sendto(response.encode('utf-8'), addr)
 
         # Query all registered players
@@ -86,6 +86,28 @@ def handle_client(server, data, addr):
             else:
                 response = "No active games in progress"
             server.sendto(response.encode('utf-8'), addr)
+
+        elif message.startswith("end"):
+            _, game_id, player_name = message.split()
+            game_id = int(game_id)
+
+            if game_id not in games:
+                server.sendto(b"FAILURE: Game ID not found\n", addr)
+                return
+
+            dealer, players_in_game, num_holes = games[game_id]
+
+            if player_name != dealer:
+                server.sendto(b"FAILURE: Only the dealer can end the game\n", addr)
+                return
+
+            for player in players_in_game:
+                new_player_tuple = (player[0], player[1], player[2], "free")
+                players[player[0]] = new_player_tuple
+                free_players.append(player[0])
+
+            del games[game_id]
+            server.sendto(b"SUCCESS: Game ended\n", addr)
 
         # De-register a player
         elif message.startswith("de-register"):
@@ -118,3 +140,11 @@ def start_tracker(port):
 
 if __name__ == "__main__":
     start_tracker(50500)
+
+
+# register Joe 10.120.70.112 50000 50001
+# register Bob 10.120.70.120 50003 50004
+# register Billy 10.120.70.120 50005 50006
+# register Grace 10.120.70.112 50007 50008
+# start game Joe 1 1
+# start Grace 1 1

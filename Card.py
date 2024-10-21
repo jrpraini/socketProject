@@ -2,8 +2,7 @@ class Card:
     def __init__(self, suit, rank):
         self.suit = suit
         self.rank = rank
-        self.value = None
-        self.set_value()
+        self.value = 0
         self.face_up = False
 
     
